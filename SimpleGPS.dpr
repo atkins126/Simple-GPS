@@ -1,6 +1,4 @@
-program SimpleGPS;
-
-{$R *.dres}
+﻿program SimpleGPS;
 
 uses
   System.StartUpCopy,
@@ -8,14 +6,19 @@ uses
   Androidapi.JNI.GraphicsContentViewText,
   Androidapi.Helpers,
   FMX.Forms,
-  Principal in 'Principal.pas' {FPrinc};
+  Principal in 'Principal.pas' {FPrinc},
+  Androidapi.JNI.Location in 'Androidapi.JNI.Location.pas',
+  System.Android.Sensors in 'System.Android.Sensors.pas',
+  DataMod in 'DataMod.pas' {DMod: TDataModule},
+  AgrCoordenada in 'AgrCoordenada.pas' {FrmAgrCoord: TFrame};
 
 {$R *.res}
 
 begin
   Application.Initialize;
   SharedActivity.getWindow.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_KEEP_SCREEN_ON);
-  Application.FormFactor.Orientations := [TFormOrientation.Portrait, TFormOrientation.InvertedPortrait, TFormOrientation.Landscape, TFormOrientation.InvertedLandscape];
+  Application.FormFactor.Orientations := [TFormOrientation.Portrait];
+  Application.CreateForm(TDMod, DMod);
   Application.CreateForm(TFPrinc, FPrinc);
   Application.Run;
 end.
