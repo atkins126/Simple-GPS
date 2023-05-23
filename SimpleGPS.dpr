@@ -1,11 +1,11 @@
 ﻿program SimpleGPS;
 
 uses
-  System.StartUpCopy,
+  FMX.Forms, System.StartUpCopy, System.SysUtils,
   Androidapi.JNI.App,
   Androidapi.JNI.GraphicsContentViewText,
   Androidapi.Helpers,
-  FMX.Forms,
+  UtilesSimpleGPS in 'UtilesSimpleGPS.pas',
   Principal in 'Principal.pas' {FPrinc},
   Androidapi.JNI.Location in 'Androidapi.JNI.Location.pas',
   System.Android.Sensors in 'System.Android.Sensors.pas',
@@ -16,7 +16,8 @@ uses
 
 begin
   Application.Initialize;
-  SharedActivity.getWindow.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_KEEP_SCREEN_ON);
+  TAndroidHelper.Activity.getWindow.addFlags(
+    TJWindowManager_LayoutParams.JavaClass.FLAG_KEEP_SCREEN_ON);
   Application.FormFactor.Orientations := [TFormOrientation.Portrait];
   Application.CreateForm(TDMod, DMod);
   Application.CreateForm(TFPrinc, FPrinc);

@@ -129,6 +129,8 @@ object FrmAgrCoord: TFrmAgrCoord
           Size.Width = 250.000000000000000000
           Size.Height = 70.000000000000000000
           Size.PlatformDefault = False
+          XRadius = 3.000000000000000000
+          YRadius = 3.000000000000000000
           object MemoDescr: TMemo
             Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
             DataDetectorTypes = []
@@ -180,6 +182,8 @@ object FrmAgrCoord: TFrmAgrCoord
         Size.Width = 500.000000000000000000
         Size.Height = 298.000000000000000000
         Size.PlatformDefault = False
+        XRadius = 3.000000000000000000
+        YRadius = 3.000000000000000000
         object SGrid: TStringGrid
           Align = Client
           CanFocus = True

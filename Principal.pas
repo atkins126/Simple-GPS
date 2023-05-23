@@ -7,14 +7,14 @@ uses
   System.Sensors, FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.Layouts, FMX.Platform.Android,
   System.Sensors.Components, FMX.Objects, UTM_WGS84, Androidapi.JNI.Location,
-  FMX.FontGlyphs.Android, AgrCoordenada;
+  FMX.FontGlyphs.Android, System.Math, AgrCoordenada, UtilesSimpleGPS;
 
 type
   TFPrinc = class(TForm)
     LayFlecha: TLayout;
     CrcKingOTN: TCircle;
     LayBot: TLayout;
-    SpeedButton1: TSpeedButton;
+    SBSalir: TSpeedButton;
     StyleBook: TStyleBook;
     VertScrollBox1: TVertScrollBox;
     LayMap: TLayout;
@@ -36,7 +36,7 @@ type
     LayMsgUTM: TLayout;
     Label7: TLabel;
     LctSensor: TLocationSensor;
-    SpeedButton2: TSpeedButton;
+    SBAcerca: TSpeedButton;
     LayLED: TLayout;
     SwitchGPS: TSwitch;
     LActivar: TLabel;
@@ -79,11 +79,16 @@ type
     Rectangle5: TRectangle;
     SBAgregar: TSpeedButton;
     FrmAgrCoord: TFrmAgrCoord;
+    Layout12: TLayout;
+    Label11: TLabel;
+    LVelocidad: TLabel;
+    Layout13: TLayout;
+    Line1: TLine;
     procedure LctSensorLocationChanged(Sender: TObject; const OldLocation,
       NewLocation: TLocationCoord2D);
     procedure SwitchGPSSwitch(Sender: TObject);
-    procedure SpeedButton1Click(Sender: TObject);
-    procedure SpeedButton2Click(Sender: TObject);
+    procedure SBSalirClick(Sender: TObject);
+    procedure SBAcercaClick(Sender: TObject);
     procedure LctSensorHeadingChanged(Sender: TObject;
       const AHeading: THeading);
     procedure BAceptarClick(Sender: TObject);
@@ -97,16 +102,9 @@ type
     { Public declarations }
   end;
 
-const
-  Blanco=4294967295;
-  Negro=4278190080;
-  Lima=4278255360;
-  Chartreuse=$FF7FFF00;
-  Rojo=$FFFF0000;
-
 var
   FPrinc: TFPrinc;
-  Coords: TCoord;
+
 
 implementation
 
@@ -114,71 +112,6 @@ uses
   System.Permissions, FMX.DialogService, DataMod;
 
 {$R *.fmx}
-
-function Orientacion(Grados: double): string;
-begin
-  case Round(Grados) of
-    0..10,350..360: Result:='N';  //norte
-    11..34: Result:='N - NE';     //norte-noreste
-    35..54: Result:='NE';         //noreste
-    55..79: Result:='E - NE';     //este-noreste
-    80..100: Result:='E';         //este
-    101..124: Result:='E - SE';   //este-sureste
-    125..144: Result:='SE';       //sureste
-    145..169: Result:='S - SE';   //sur-sureste
-    170..190: Result:='S';        //sur
-    191..214: Result:='S - SW';   //sur-suroeste
-    215..234: Result:='SW';       //suroeste
-    235..259: Result:='W - SW';   //oeste-suroeste
-    260..280: Result:='W';        //oeste
-    281..304: Result:='W - NW';   //oeste-noroeste
-    305..324: Result:='NW';       //noroeste
-    325..349: Result:='N - NW';   //norte-noroeste
-  end;
-end;
-
-procedure RotarFlecha(Circulo: TCircle; Azimut: Double);
-var
-  I,AntGrados,NvoGrados,Diferencia: Word;
-
-  procedure MoverFlecha(I: word);
-  begin
-    Application.ProcessMessages;
-    Sleep(50);
-    Circulo.RotationAngle:=I;
-  end;
-
-begin
-  if Round(Circulo.RotationAngle)=0 then AntGrados:=360
-  else AntGrados:=Round(Circulo.RotationAngle);
-  if Azimut=0 then NvoGrados:=360
-              else NvoGrados:=Round(Azimut);
-  Diferencia:=Abs(NvoGrados-AntGrados);
-  if Diferencia<=180 then
-  begin
-    if NvoGrados>AntGrados then
-      for I:=AntGrados to NvoGrados do MoverFlecha(I)
-    else
-      for I:=AntGrados downto NvoGrados do MoverFlecha(I);
-  end
-  else
-  begin
-    Circulo.RotationAngle:=AntGrados+NvoGrados;
-    if AntGrados>NvoGrados then
-      for I:=AntGrados to 360+NvoGrados do MoverFlecha(I)
-    else
-      for I:=AntGrados downto NvoGrados do MoverFlecha(I)
-  end;
-end;
-
-procedure CargarFuente(Etq: TLabel);
-var
-  Recursos: TResourceStream;
-  Fuente: TFont;
-begin
-  Fuente:=TFont.Create;
-  Recursos:=TResourceStream.Create(hInstance,'1',RT_RCDATA);
-end;
 
 procedure TFPrinc.BAceptarClick(Sender: TObject);
 begin
@@ -236,6 +169,8 @@ begin
   LNorte.Text:=FormatFloat('#0.00',UTM.Y);
   LLatGMS.Text:=DecAGrados(LatLon.Lat,true);
   LLonGMS.Text:=DecAGrados(LatLon.Lon,false);
+  if IsNaN(LctSensor.Sensor.Speed) then LVelocidad.Text:='0.00'
+  else LVelocidad.Text:=FormatFloat('#0.00',LctSensor.Sensor.Speed);
   //carga el registro:
   Coords.EsteUTM:=UTM.X;
   Coords.NorteUTM:=UTM.Y;
@@ -248,13 +183,13 @@ begin
   Coords.Fecha:=Now;
 end;
 
-procedure TFPrinc.SpeedButton1Click(Sender: TObject);
+procedure TFPrinc.SBSalirClick(Sender: TObject);
 begin
   DMod.FDConn.Connected:=false;
   Application.Terminate;
 end;
 
-procedure TFPrinc.SpeedButton2Click(Sender: TObject);
+procedure TFPrinc.SBAcercaClick(Sender: TObject);
 begin
   LayPrinc.Visible:=false;
   PnlAcerca.Visible:=true;
@@ -277,22 +212,8 @@ begin
 end;
 
 procedure TFPrinc.SwitchGPSSwitch(Sender: TObject);
-const
-  PermissionAccessFineLocation='android.permission.ACCESS_FINE_LOCATION';
 begin
-  PermissionsService.RequestPermissions([PermissionAccessFineLocation],
-    procedure(const APermissions: TClassicStringDynArray;
-              const AGrantResults: TClassicPermissionStatusDynArray)
-    begin
-      if (Length(AGrantResults)=1) and (AGrantResults[0]=TPermissionStatus.Granted) then
-        LctSensor.Active := SwitchGPS.IsChecked
-      else
-      begin
-        SwitchGPS.IsChecked:=false;
-        FrmAgrCoord.ValInicio;
-        TDialogService.ShowMessage('Permiso de Localización no está permitido');
-      end;
-    end);
+  ActivarGPS(LctSensor,SwitchGPS.IsChecked);
   //se cambian los colores según esté activo o no el GPS:
   if SwitchGPS.IsChecked then
   begin
@@ -303,6 +224,7 @@ begin
   end
   else
   begin
+    FrmAgrCoord.ValInicio;
     LActivar.Text:='Activar GPS';
     LActivar.TextSettings.FontColor:=Blanco;
     RectActivar.Fill.Color:=Rojo;
